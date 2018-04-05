@@ -31,16 +31,23 @@
         <keypoints>
             <point name='HO' framenum='5'/>
             <point name='FF' framenum='7'/>
+            <point name="HS1" framenum="5"/>
+            <point name="TO" framenum="21"/>
+            <point name="HS2" framenum="31"/>
         </keypoints>
     </dataset>
     <definitions>
         <phases>
             <phase name='Early Stance' start='HO' end="FF"/>
+            <phase name="Stride" start="HS1" end="HS2"/>
         </phases>
     </definitions>
     <analysis>
         <graph file="ankle_position.png" phase='Early Stance' title="Graph Title" joint="ankle" normalise='true' x-axis="x position" y-axis="y position" x-axis-title="Phase" y-axis-title="Height (m)"/>
+        <graph file="knee_position.png" phase="Stride" title="Knee Position during Stride" joint="knee" normalise="true" x-axis="x position" y-axis="y position" x-axis-title="X Position" y-axis-title="Y Position (m)"/>
+        <!--
         <graph title="Another Graph" phase='Early Stance' joint="ankle" x-axis="x velocity" y-axis="framenum"/>
         <graph title="Joint Angle" phase='Early Stance' joint="ankle" x-axis="angle" y-axis="framenum"/>
+        -->
     </analysis>
 </Configuration>

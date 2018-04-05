@@ -18,7 +18,6 @@ class DataSet:
         self.xml = None
         self.xml_root = None
         self.samples = {}
-        self.key_points = {}
         self.phases = {}
         self.graphs = []
         self.process_config_file()
@@ -27,7 +26,6 @@ class DataSet:
         self.xml = Et.parse(self.xml_config_file)
         self.xml_root = self.xml.getroot()
         definitions = self.xml_root.find('definitions')
-        self.generate_key_points(definitions.find('keypoints'))
         self.generate_phases(definitions.find('phases'))
         self.generate_graph_data(self.xml_root.find('analysis'))
         for d in self.xml_root.findall('dataset'):
@@ -38,13 +36,15 @@ class DataSet:
                 ds_id = -1
             if ds_id == -1 or ds_type is None:
                 sys.exit('There is an invalid XML Entry for a Dataset')
-            self.samples.update({ds_id: Sample(ds_type, d, ds_id)})
+            new_sample = Sample(ds_type, d, ds_id)
+            self.samples.update({ds_id: new_sample})
+            """
             kp = d.find('keypoints')
             for p in kp.findall('point'):
                 kp_name = p.get('name')
                 if kp_name is None:
                     sys.exit('The Dataset with ID %d has a Key Point with no name' % ds_id)
-                if kp_name not in self.key_points:
+                if kp_name not in new_sample.key_points:
                     sys.exit('The Dataset with ID %d has a Key Point that is not defined (%s)'
                              % (ds_id, kp_name))
                 try:
@@ -56,14 +56,7 @@ class DataSet:
                     sys.exit('The Sample %d has a Key Point %s with no frame number'
                              % (ds_id, kp_name))
                 self.samples[ds_id].set_keypoint(kp_name, framenum)
-
-    def generate_key_points(self, keypoints):
-        for p in keypoints.findall('point'):
-            abbr = p.get('abbr')
-            name = p.get('name')
-            if abbr is None or name is None:
-                sys.exit('A Key Point is defined without an Abbreviation or Name')
-            self.key_points.update({abbr: KeyPointData(name, abbr)})
+            """
 
     def generate_phases(self, phases):
         for p in phases.findall('phase'):
@@ -72,10 +65,6 @@ class DataSet:
             end = p.get('end')
             if name is None or start is None or end is None:
                 sys.exit('A Phase is defined without a Name, Start Point or End Point')
-            if start not in self.key_points:
-                sys.exit('The phase %s starts at an unknown key point (%s)' % (name, start))
-            if end not in self.key_points:
-                sys.exit('The phase %s ends at an unknown key point (%s)' % (name, end))
             self.phases.update({name.replace(' ', '_'): Phase(start, end)})
 
     def generate_graph_data(self, analysis_data):
@@ -96,7 +85,7 @@ class DataSet:
             plot = fig.add_subplot(1, 1, 1)
             plot.set_title(g.title)
             for k, v in self.samples.items():
-                v.graph(g, fig)
+                v.graph(g, plot)
             fig.savefig(g.filename)
 
 
@@ -163,11 +152,6 @@ class Sample:
         if None in column_data:
             sys.exit('There was an error processing Column Data for the file %s' % filename)
         return column_data
-
-    def set_keypoint(self, kp_name, framenum):
-        if kp_name not in self.key_points:
-            self.key_points.update({kp_name: []})
-        self.key_points[kp_name].append(framenum)
 
     def graph(self, graph_data, fig):
         if graph_data.joint in self.joints:
@@ -237,14 +221,15 @@ class Joint:
         if graph_data.normalise:
             self.normalise_data(x_data, x_data_type, graph_data.joint, phase_start, phase_end)
         else:
-            for i in range(phase_start, phase_end):
-                x_data.append(self.joint_data[graph_data.joint].get(x_data_type[1], x_data_type[0]))
-        for i in range(phase_start, phase_end):
-            y_data.append(self.joint_data[graph_data.joint].get(y_data_type[1], y_data_type[0]))
+            for i in range(phase_start.frame_num, phase_end.frame_num):
+                x_data.append(self.joint_data[i].get(x_data_type[1], x_data_type[0]))
+        for i in range(phase_start.frame_num, phase_end.frame_num):
+            y_data.append(self.joint_data[i].get(y_data_type[1], y_data_type[0]))
 
     def normalise_data(self, x_data, x_data_type, joint, phase_start, phase_end):
-        phase_length = phase_end - phase_start
-        x_data.append(100/phase_length * self.joint_data[joint].get(x_data_type[1], x_data_type[0]))
+        phase_length = phase_end.frame_num - phase_start.frame_num
+        for i in range(phase_start.frame_num, phase_end.frame_num):
+            x_data.append(100/phase_length * self.joint_data[i].get(x_data_type[1], x_data_type[0]))
 
 
 class JointData:
@@ -283,13 +268,8 @@ class JointData:
 class KeyPoint:
     def __init__(self, point_data):
         self.name = point_data.get('name')
-        self.frame_num = point_data.get('framenum')
+        self.frame_num = int(point_data.get('framenum'))
 
-
-class KeyPointData:
-    def __init__(self, name, abbr):
-        self.name = name
-        self.abbr = abbr
 
 class Phase:
     def __init__(self, start, end):
