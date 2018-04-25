@@ -1,50 +1,98 @@
 <?xml version="1.0" ?>
 <Configuration>
     <dataset type='control' id='1'>
-        <file filename='walk_lin.txt' framerate='25' skip="6">
+        <file filename='Shod-Linear3.txt' framerate='25' skip="6" y-fudge="-0.0019024">
             <columns>
-                <col joint='toe' colnum='1' type='position' plane='x'/>
-                <col joint='toe' colnum='2' type='position' plane='y'/>
-                <col joint="toe" colnum="3" type="velocity" plane="x"/>
-                <col joint="toe" colnum="4" type="velocity" plane="y"/>
-                <col joint="ankle" colnum="5" type="position" plane="x"/>
-                <col joint="ankle" colnum="6" type="position" plane="y"/>
-                <col joint="ankle" colnum="7" type="velocity" plane="x"/>
-                <col joint="ankle" colnum="8" type="velocity" plane="y"/>
+                <col joint='glenohumeral' colnum='1' type='position' plane='x'/>
+                <col joint='glenohumeral' colnum='2' type='position' plane='y'/>
+                <col joint="glenohumeral" colnum="3" type="velocity" plane="x"/>
+                <col joint="glenohumeral" colnum="4" type="velocity" plane="y"/>
+                <col joint="hip" colnum="5" type="position" plane="x"/>
+                <col joint="hip" colnum="6" type="position" plane="y"/>
+                <col joint="hip" colnum="7" type="velocity" plane="x"/>
+                <col joint="hip" colnum="8" type="velocity" plane="y"/>
                 <col joint="knee" colnum="9" type="position" plane="x"/>
                 <col joint="knee" colnum="10" type="position" plane="y"/>
                 <col joint="knee" colnum="11" type="velocity" plane="x"/>
                 <col joint="knee" colnum="12" type="velocity" plane="y"/>
-                <col joint="hip" colnum="13" type="position" plane="x"/>
-                <col joint="hip" colnum="14" type="position" plane="y"/>
-                <col joint="hip" colnum="15" type="velocity" plane="x"/>
-                <col joint="hip" colnum="16" type="velocity" plane="y"/>
+                <col joint="ankle" colnum="13" type="position" plane="x"/>
+                <col joint="ankle" colnum="14" type="position" plane="y"/>
+                <col joint="ankle" colnum="15" type="velocity" plane="x"/>
+                <col joint="ankle" colnum="16" type="velocity" plane="y"/>
+                <col joint="toe" colnum="17" type="position" plane="x"/>
+                <col joint="toe" colnum="18" type="position" plane="y"/>
+                <col joint="toe" colnum="19" type="velocity" plane="x"/>
+                <col joint="toe" colnum="20" type="velocity" plane="y"/>
             </columns>
         </file>
-        <file filename='walk_ang.txt' framerate="25" skip="6">
+        <file filename='Shod-Ang3.txt' framerate="25" skip="6">
             <columns>
-                <col joint='ankle' colnum='1' type='angle'/>
+                <col joint='hip' colnum='1' type='angle'/>
                 <col joint="knee" colnum="2" type="angle"/>
+                <col joint="ankle" colnum="3" type="angle"/>
             </columns>
-
         </file>
         <keypoints>
-            <point name='HO' framenum='5'/>
-            <point name='FF' framenum='7'/>
-            <point name="HS1" framenum="5"/>
-            <point name="TO" framenum="21"/>
+            <point name='HS1' framenum='3'/>
+            <point name='FF' framenum='6'/>
+            <point name="HO" framenum="12"/>
+            <point name="TO" framenum="20"/>
             <point name="HS2" framenum="31"/>
+        </keypoints>
+    </dataset>
+    <dataset type="sample" id="2">
+        <file filename="UnShod-Linear3.txt" framerate="25" skip="6" y-fudge="-0.00190476190476">
+            <columns>
+                <col joint='glenohumeral' colnum='1' type='position' plane='x'/>
+                <col joint='glenohumeral' colnum='2' type='position' plane='y'/>
+                <col joint="glenohumeral" colnum="3" type="velocity" plane="x"/>
+                <col joint="glenohumeral" colnum="4" type="velocity" plane="y"/>
+                <col joint="hip" colnum="5" type="position" plane="x"/>
+                <col joint="hip" colnum="6" type="position" plane="y"/>
+                <col joint="hip" colnum="7" type="velocity" plane="x"/>
+                <col joint="hip" colnum="8" type="velocity" plane="y"/>
+                <col joint="knee" colnum="9" type="position" plane="x"/>
+                <col joint="knee" colnum="10" type="position" plane="y"/>
+                <col joint="knee" colnum="11" type="velocity" plane="x"/>
+                <col joint="knee" colnum="12" type="velocity" plane="y"/>
+                <col joint="ankle" colnum="13" type="position" plane="x"/>
+                <col joint="ankle" colnum="14" type="position" plane="y"/>
+                <col joint="ankle" colnum="15" type="velocity" plane="x"/>
+                <col joint="ankle" colnum="16" type="velocity" plane="y"/>
+                <col joint="toe" colnum="17" type="position" plane="x"/>
+                <col joint="toe" colnum="18" type="position" plane="y"/>
+                <col joint="toe" colnum="19" type="velocity" plane="x"/>
+                <col joint="toe" colnum="20" type="velocity" plane="y"/>
+            </columns>
+        </file>
+        <file filename="UnShod-Ang3.txt" framerate="25" skip="6">
+            <columns>
+                <col joint='hip' colnum='1' type='angle'/>
+                <col joint="knee" colnum="2" type="angle"/>
+                <col joint="ankle" colnum="3" type="angle"/>
+            </columns>
+        </file>
+        <keypoints>
+            <point name="HS1" framenum="8"/>
+            <point name="FF" framenum="9"/>
+            <point name="HO" framenum="17"/>
+            <point name="TO" framenum="24"/>
+            <point name="HS2" framenum="35"/>
         </keypoints>
     </dataset>
     <definitions>
         <phases>
-            <phase name='Early Stance' start='HO' end="FF"/>
+            <phase name='Early Stance' start='HS1' end="FF"/>
             <phase name="Stride" start="HS1" end="HS2"/>
+            <phase name="Swing" start="TO" end="HS2"/>
         </phases>
     </definitions>
     <analysis>
-        <graph file="ankle_position.png" phase='Early Stance' title="Graph Title" joint="ankle" normalise='true' x-axis="x position" y-axis="y position" x-axis-title="Phase" y-axis-title="Height (m)"/>
+        <graph file="ankle_position.png" phase='Stride' title="Ankle Position during Stride" joint="ankle" normalise='true' x-axis="x position" y-axis="y position" x-axis-title="Distance (% Stride)" y-axis-title="Height (m)"/>
+        <graph file="toe_position_stride.png" phase="Stride" title="Toe Position during Stride" joint="toe" normalise="false" x-axis="x position" y-axis="y position" x-axis-title="Distance (m)" y-axis-title="Height (mg)"/>
         <graph file="knee_position.png" phase="Stride" title="Knee Position during Stride" joint="knee" normalise="true" x-axis="x position" y-axis="y position" x-axis-title="X Position" y-axis-title="Y Position (m)"/>
+        <graph file="toe_position.png" phase="Stride" title="Toe Position during Stride" joint="toe" normalise="true" x-axis="x position" y-axis="y position" x-axis-title="Distance (% Stride)" y-axis-title="Distance (m)"/>
+        <graph file="ankle_angle.png" phase="Stride" title="Ankle Angle during Stride" joint="ankle" normalise="true" x-axis="x position" y-axis="z angle" x-axis-title="Distance (% Stride)" y-axis-title="Angle (degrees)"/>
         <!--
         <graph title="Another Graph" phase='Early Stance' joint="ankle" x-axis="x velocity" y-axis="framenum"/>
         <graph title="Joint Angle" phase='Early Stance' joint="ankle" x-axis="angle" y-axis="framenum"/>

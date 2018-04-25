@@ -74,9 +74,6 @@ class DataSet:
     def get_key_point_data(self, sample_id, keypoint):
         if sample_id not in self.samples:
             sys.exit('Requested Key Point Data for sample id %d which does not exist' % sample_id)
-        if keypoint not in self.key_points:
-            sys.exit('Requested Key Point Data for sample id %d which is not defined (%s)'
-                     % (sample_id, keypoint))
         return self.samples[sample_id].get_keypoint_data(keypoint)
 
     def create_graphs(self):
@@ -84,6 +81,8 @@ class DataSet:
             fig = plt.figure(figsize=(10, 10))
             plot = fig.add_subplot(1, 1, 1)
             plot.set_title(g.title)
+            plot.set_xlabel(g.x_axis_title)
+            plot.set_ylabel(g.y_axis_title)
             for k, v in self.samples.items():
                 v.graph(g, plot)
             fig.savefig(g.filename)
@@ -114,6 +113,14 @@ class Sample:
             framerate = int(file_info.get('framerate'))
         except ValueError:
             sys.exit('The file %s has an invalid framerate' % filename)
+        y_fudge = file_info.get('y-fudge')
+        if y_fudge is None:
+            y_fudge = 0
+        else:
+            try:
+                y_fudge = float(file_info.get('y-fudge'))
+            except ValueError:
+                sys.exit('The file %s has an invalid y-fudge value' % filename)
         with open(filename, 'r') as f:
             csv_reader = csv.reader(f, delimiter='\t', quotechar='"')
             if file_info.get('skip') is not None:
@@ -130,7 +137,7 @@ class Sample:
                     if c.joint not in self.joints:
                         self.joints.update({c.joint: Joint(c.joint)})
                     try:
-                        self.joints[c.joint].update_joint(c, line[c.col_num - 1], line_count, framerate)
+                        self.joints[c.joint].update_joint(c, line[c.col_num - 1], line_count, framerate, y_fudge)
                     except ValueError:
                         sys.exit("There was an error processing the data in column %d for file %s for frame number %d."
                                  % (c.col_num, filename, line_count + 1))
@@ -204,10 +211,10 @@ class Joint:
         self.joint_name = joint_name
         self.joint_data = {}
 
-    def update_joint(self, column_data, data, frame_num, framerate):
+    def update_joint(self, column_data, data, frame_num, framerate, y_fudge):
         if frame_num not in self.joint_data:
             self.joint_data.update({frame_num: JointData(frame_num, framerate)})
-        self.joint_data[frame_num].add_joint_data(column_data, data)
+        self.joint_data[frame_num].add_joint_data(column_data, data, y_fudge)
 
     def __str__(self):
         output_str = 'Joint Name: %s' % self.joint_name
@@ -219,17 +226,18 @@ class Joint:
         x_data_type = graph_data.x_axis.split(' ')
         y_data_type = graph_data.y_axis.split(' ')
         if graph_data.normalise:
-            self.normalise_data(x_data, x_data_type, graph_data.joint, phase_start, phase_end)
+            self.normalise_data(x_data, x_data_type, phase_start, phase_end)
         else:
-            for i in range(phase_start.frame_num, phase_end.frame_num):
+            for i in range(phase_start.frame_num, phase_end.frame_num+1):
                 x_data.append(self.joint_data[i].get(x_data_type[1], x_data_type[0]))
-        for i in range(phase_start.frame_num, phase_end.frame_num):
+        for i in range(phase_start.frame_num, phase_end.frame_num+1):
             y_data.append(self.joint_data[i].get(y_data_type[1], y_data_type[0]))
 
-    def normalise_data(self, x_data, x_data_type, joint, phase_start, phase_end):
+    def normalise_data(self, x_data, x_data_type, phase_start, phase_end):
         phase_length = phase_end.frame_num - phase_start.frame_num
-        for i in range(phase_start.frame_num, phase_end.frame_num):
-            x_data.append(100/phase_length * self.joint_data[i].get(x_data_type[1], x_data_type[0]))
+        for i in range(phase_start.frame_num, phase_end.frame_num+1):
+            #x_data.append(100/phase_length * self.joint_data[i].get(x_data_type[1], x_data_type[0]))
+            x_data.append((i - phase_start.frame_num)/(phase_length)*100)
 
 
 class JointData:
@@ -239,9 +247,9 @@ class JointData:
         self.data = {i: {j: None for j in ColumnData.VALID_PLANES} for i in ColumnData.TYPE_HAS_COORDS}
         self.angle = None
 
-    def add_joint_data(self, column_data, data):
+    def add_joint_data(self, column_data, data, y_fudge):
         if column_data.type in ColumnData.TYPE_HAS_COORDS:
-            self.data[column_data.type][column_data.plane] = float(data)
+            self.data[column_data.type][column_data.plane] = float(data) + (self.frame_num - 1) * y_fudge
         else:
             self.angle = float(data)
 
