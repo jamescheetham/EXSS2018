@@ -20,6 +20,7 @@ class DataSet:
         self.samples = {}
         self.phases = {}
         self.graphs = []
+        self.extract_data = []
         self.process_config_file()
 
     def process_config_file(self):
@@ -28,6 +29,7 @@ class DataSet:
         definitions = self.xml_root.find('definitions')
         self.generate_phases(definitions.find('phases'))
         self.generate_graph_data(self.xml_root.find('analysis'))
+        self.generate_extract_data(self.xml_root.find('analysis'))
         for d in self.xml_root.findall('dataset'):
             ds_type = d.get('type')
             try:
@@ -71,6 +73,10 @@ class DataSet:
         for g in analysis_data.findall('graph'):
             self.graphs.append(Graph(g, self.phases))
 
+    def generate_extract_data(self, analysis_data):
+        for d in analysis_data.findall('data'):
+            self.extract_data.append(ExtractData(d, self.phases))
+
     def get_key_point_data(self, sample_id, keypoint):
         if sample_id not in self.samples:
             sys.exit('Requested Key Point Data for sample id %d which does not exist' % sample_id)
@@ -86,6 +92,10 @@ class DataSet:
             for k, v in self.samples.items():
                 v.graph(g, plot)
             fig.savefig(g.filename)
+
+    def process_extract_data(self):
+        for d in self.extract_data:
+            pass
 
 
 class Sample:
@@ -226,18 +236,18 @@ class Joint:
         x_data_type = graph_data.x_axis.split(' ')
         y_data_type = graph_data.y_axis.split(' ')
         if graph_data.normalise:
-            self.normalise_data(x_data, x_data_type, phase_start, phase_end)
+            Joint.normalise_data(x_data, phase_start, phase_end)
         else:
             for i in range(phase_start.frame_num, phase_end.frame_num+1):
                 x_data.append(self.joint_data[i].get(x_data_type[1], x_data_type[0]))
         for i in range(phase_start.frame_num, phase_end.frame_num+1):
             y_data.append(self.joint_data[i].get(y_data_type[1], y_data_type[0]))
 
-    def normalise_data(self, x_data, x_data_type, phase_start, phase_end):
+    @staticmethod
+    def normalise_data(x_data, phase_start, phase_end):
         phase_length = phase_end.frame_num - phase_start.frame_num
         for i in range(phase_start.frame_num, phase_end.frame_num+1):
-            #x_data.append(100/phase_length * self.joint_data[i].get(x_data_type[1], x_data_type[0]))
-            x_data.append((i - phase_start.frame_num)/(phase_length)*100)
+            x_data.append((i - phase_start.frame_num)/phase_length*100)
 
 
 class JointData:
@@ -304,8 +314,28 @@ class Graph:
         self.normalise = (xml_data.get('normalise') == 'true')
 
 
+class ExtractData:
+    def __init__(self, xml_data, phases):
+        self.name = xml_data.get("name")
+        self.plane = xml_data.get("plane")
+        self.file_name = xml_data.get("filename")
+        self.value = xml_data.get("value")
+        self.joint1 = xml_data.get("joint1")
+        self.joint2 = xml_data.get("joint2")
+        self.point = xml_data.get("point")
+        self.joint = xml_data.get("joint")
+        self.phase = xml_data.get("phase")
+        if self.joint1 is None and self.joint is None:
+            sys.exit("A Defined Data (%s) does not have sufficient information", self.name)
+        if self.point is None and self.phase is None:
+            sys.exit("A Defined Data (%s) does not have sufficient information", self.name)
+        if self.phase is not None and self.phase not in phases:
+            sys.exit("A Defined Data (%s) does not have a valid phase", self.name)
+
+
 def main():
     ds = DataSet('assignment.xml')
+    ds.process_extract_data()
     ds.create_graphs()
 
 

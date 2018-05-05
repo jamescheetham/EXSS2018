@@ -57,7 +57,7 @@ class TimeSlice:
     def __init__(self, frame_num, line_data, offset, fudge_factor):
         self.frame_num = frame_num
         self.x_pos = float(line_data[offset])
-        self.y_pos = float(line_data[offset+1]) + frame_num * fudge_factor
+        self.y_pos = float(line_data[offset+1]) + (frame_num - 1) * fudge_factor
         self.x_vel = float(line_data[offset+2])
         self.y_vel = float(line_data[offset+3])
         self.z_ang = None
@@ -83,7 +83,6 @@ def main():
     parser.add_option('-l', '--linear_data', action="store", type="string", dest="linear_file")
     parser.add_option('-a', '--angular_data', action="store", type="string", dest="angular_file")
     parser.add_option('-p', '--prefix', action="store", type='string', dest='output_prefix')
-    parser.add_option('-f', '--y_fudge', action="store", type="float", dest="y_fudge", default=0.0)
     
     (opt, arg) = parser.parse_args()
     if opt.linear_file is None or opt.angular_file is None or opt.output_prefix is None:
@@ -92,7 +91,10 @@ def main():
       parser.error('The Linear File %s does not exist or cannot be read' % opt.linear_file)
     if not os.path.isfile(opt.angular_file):
       parser.error('The Angular File %s does not exist or cannot be read' % opt.angular_file)
-    framecount = 0
+    framecount = None
+    #fudge_factor = -0.0019024 #Shod
+    #fudge_factor = -0.00190476190476 #UnShod
+    fudge_factor = 0
     joints = [JointData('glenohumeral', 0), JointData('hip', 4), JointData('knee', 8), JointData('ankle', 12), JointData('toe', 16)]
     with open(opt.linear_file, 'r') as f:
         csv_reader = csv.reader(f, delimiter='\t', quotechar='"')
@@ -101,7 +103,7 @@ def main():
         i = 1
         for line in csv_reader:
             for j in joints:
-                j.add_timeslice(i, line, opt.y_fudge)
+                j.add_timeslice(i, line, fudge_factor)
             i += 1
         framecount = i
 
@@ -145,9 +147,9 @@ def main():
         j.add_position_data_to_plot(pos_fig_plot)
         if j.has_angle_data:
             j.add_angle_to_plot(ang_z_plot)
-        fig.savefig('%s - %s - Graph.png' % (opt.output_prefix, j.joint_name.capitalize()))
+        fig.savefig('%s_%s - Graph.png' % (opt.output_prefix, j.joint_name.capitalize()))
 
-    pos_fig.savefig('%s - Position Graph.png' % opt.output_prefix)
+    pos_fig.savefig('%s_Position Graph.png' % opt.output_prefix)
     
     xy_plot = plt.figure(figsize=(30, 10))
     xy_plot_fig = xy_plot.add_subplot(1, 1, 1)
@@ -159,7 +161,7 @@ def main():
         j.add_xy_data(x_data, y_data, i)
       xy_plot_fig.plot(x_data, y_data, marker='o', markersize=8)
     
-    xy_plot.savefig('XY Plot.png')
+    xy_plot.savefig('%s_XY Plot.png' % opt.output_prefix)
 
 
 if __name__ == '__main__':

@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <Configuration>
-    <dataset type='control' id='1'>
-        <file filename='Shod-Linear3.txt' framerate='25' skip="6" y-fudge="-0.0019024">
-            <columns>
+    <dataset type='control' id='1' name="Shod">
+        <columns>
+            <linear>
                 <col joint='glenohumeral' colnum='1' type='position' plane='x'/>
                 <col joint='glenohumeral' colnum='2' type='position' plane='y'/>
                 <col joint="glenohumeral" colnum="3" type="velocity" plane="x"/>
@@ -23,15 +23,28 @@
                 <col joint="toe" colnum="18" type="position" plane="y"/>
                 <col joint="toe" colnum="19" type="velocity" plane="x"/>
                 <col joint="toe" colnum="20" type="velocity" plane="y"/>
-            </columns>
-        </file>
-        <file filename='Shod-Ang3.txt' framerate="25" skip="6">
-            <columns>
+            </linear>
+            <angular>
                 <col joint='hip' colnum='1' type='angle'/>
                 <col joint="knee" colnum="2" type="angle"/>
                 <col joint="ankle" colnum="3" type="angle"/>
-            </columns>
-        </file>
+            </angular>
+        </columns>
+        <calibration>
+            <details filename="Shod_Calibration_Lin1.txt" framerate="25" skip="6" type="linear"/>
+            <details filename="Shod_Calibration_Ang1.txt" framerate="25" skip="6" type="angular"/>
+        </calibration>
+        <calibration>
+            <details filename="Shod_Calibration_Lin2.txt" framerate="25" skip="6" type="linear"/>
+            <details filename="Shod_Calibration_Ang2.txt" framerate="25" skip="6" type="angular"/>
+        </calibration>
+        <normalisation>
+            <low_point joint="toe"/>
+        </normalisation>
+        <datafile>
+            <details filename='Shod-Linear.txt' framerate='25' skip="6" y-fudge="0.001357142" type="linear"/>
+            <details filename='Shod-Ang.txt' framerate="25" skip="6" type="angular"/>
+        </datafile>
         <keypoints>
             <point name='HS1' framenum='3'/>
             <point name='FF' framenum='6'/>
@@ -40,9 +53,9 @@
             <point name="HS2" framenum="31"/>
         </keypoints>
     </dataset>
-    <dataset type="sample" id="2">
-        <file filename="UnShod-Linear3.txt" framerate="25" skip="6" y-fudge="-0.00190476190476">
-            <columns>
+    <dataset type="sample" id="2" name="Unshod">
+        <columns>
+            <linear>
                 <col joint='glenohumeral' colnum='1' type='position' plane='x'/>
                 <col joint='glenohumeral' colnum='2' type='position' plane='y'/>
                 <col joint="glenohumeral" colnum="3" type="velocity" plane="x"/>
@@ -63,15 +76,24 @@
                 <col joint="toe" colnum="18" type="position" plane="y"/>
                 <col joint="toe" colnum="19" type="velocity" plane="x"/>
                 <col joint="toe" colnum="20" type="velocity" plane="y"/>
-            </columns>
-        </file>
-        <file filename="UnShod-Ang3.txt" framerate="25" skip="6">
-            <columns>
+            </linear>
+            <angular>
                 <col joint='hip' colnum='1' type='angle'/>
                 <col joint="knee" colnum="2" type="angle"/>
                 <col joint="ankle" colnum="3" type="angle"/>
-            </columns>
-        </file>
+            </angular>
+        </columns>
+        <calibration>
+            <details filename="UnShod_Calibration_Lin.txt" framerate="25" skip="6" type="linear"/>
+            <details filename="UnShod_Calibration_Ang.txt" framerate="25" skip="6" type="angular"/>
+        </calibration>
+        <normalisation>
+            <low_point joint="toe"/>
+        </normalisation>
+        <datafile>
+            <details filename="UnShod-Linear2.txt" framerate="25" skip="6" y-fudge="0.001170731" type="linear"/>
+            <details filename="UnShod-Ang2.txt" framerate="25" skip="6" type="angular"/>
+        </datafile>
         <keypoints>
             <point name="HS1" framenum="8"/>
             <point name="FF" framenum="9"/>
@@ -86,16 +108,86 @@
             <phase name="Stride" start="HS1" end="HS2"/>
             <phase name="Swing" start="TO" end="HS2"/>
         </phases>
+        <segments>
+            <segment name="Torso" superior="glenohumeral" inferior="hip"/>
+            <segment name="Thigh" superior="hip" inferior="knee"/>
+            <segment name="Shank" superior="knee" inferior="ankle"/>
+            <segment name="Foot" superior="ankle" inferior="toe"/>
+        </segments>
     </definitions>
     <analysis>
-        <graph file="ankle_position.png" phase='Stride' title="Ankle Position during Stride" joint="ankle" normalise='true' x-axis="x position" y-axis="y position" x-axis-title="Distance (% Stride)" y-axis-title="Height (m)"/>
-        <graph file="toe_position_stride.png" phase="Stride" title="Toe Position during Stride" joint="toe" normalise="false" x-axis="x position" y-axis="y position" x-axis-title="Distance (m)" y-axis-title="Height (mg)"/>
-        <graph file="knee_position.png" phase="Stride" title="Knee Position during Stride" joint="knee" normalise="true" x-axis="x position" y-axis="y position" x-axis-title="X Position" y-axis-title="Y Position (m)"/>
-        <graph file="toe_position.png" phase="Stride" title="Toe Position during Stride" joint="toe" normalise="true" x-axis="x position" y-axis="y position" x-axis-title="Distance (% Stride)" y-axis-title="Distance (m)"/>
-        <graph file="ankle_angle.png" phase="Stride" title="Ankle Angle during Stride" joint="ankle" normalise="true" x-axis="x position" y-axis="z angle" x-axis-title="Distance (% Stride)" y-axis-title="Angle (degrees)"/>
-        <!--
-        <graph title="Another Graph" phase='Early Stance' joint="ankle" x-axis="x velocity" y-axis="framenum"/>
-        <graph title="Joint Angle" phase='Early Stance' joint="ankle" x-axis="angle" y-axis="framenum"/>
-        -->
+        <graphs>
+            <graph file="ankle_position.png" title="Ankle Position During Stride" phase="Stride" joint="ankle" normalise="true">
+                <x-axis data="x position" title="Distance (% Stride)"/>
+                <y-axis data="y position" title="Height (m)"/>
+            </graph>
+            <graph file="toe_position_stride.png" title="Toe Position during Stride" phase="Stride" joint="toe" normalise="false">
+                <x-axis data="x position" title="Distance (m)"/>
+                <y-axis data="y position" title="Height (m)"/>
+            </graph>
+            <graph file="knee_position.png" title="Knee Position during Stride" phase="Stride" joint="knee" normalise="true">
+                <x-axis data="x position" title="Distance (% Stride)"/>
+                <y-axis data="y position" title="Height (m)"/>
+            </graph>
+            <graph file="toe_position.png" title="Toe Position during Stride" phase="Stride" joint="toe" normalise="true">
+                <x-axis data="x position" title="Distance (% Stride)"/>
+                <y-axis data="y position" title="Height (m)"/>
+            </graph>
+            <graph file="ankle_angle.png" phase="Stride" title="Ankle Angle during Stride" joint="ankle" normalise="true">
+                <x-axis data="x position" title="Distance (% Stride)"/>
+                <y-axis data="angle" title="Angle (degrees)"/>
+            </graph>
+            <graph file="shoulder_position.png" phase="Stride" title="Shoulder Position during Stride" joint="glenohumeral" normalise="true">
+                <x-axis data="x position" title="Distance (% Stride)"/>
+                <y-axis data="y position" title="Height (m)"/>
+            </graph>
+        </graphs>
+        <data file="output_data.csv">
+            <row name="Horizontal Distance Between Ankle and Hip at Heel Strike 1">
+                <joint>ankle</joint>
+                <joint>hip</joint>
+                <point>HS1</point>
+                <plane>x</plane>
+                <value>position</value>
+            </row>
+            <row name="Stride Length">
+                <joint>ankle</joint>
+                <phase>Stride</phase>
+                <plane>x</plane>
+                <value>position</value>
+            </row>
+            <row name="Horizontal Distance Between Ankle and Hip at Heel Strike 2">
+                <joint>ankle</joint>
+                <joint>hip</joint>
+                <point>HS2</point>
+                <plane>x</plane>
+                <value>position</value>
+            </row>
+            <row name="Foot Angle at HS1">
+                <joint>ankle</joint>
+                <point>HS1</point>
+                <value>angle</value>
+            </row>
+            <row name="Foot Angle at HS2">
+                <joint>ankle</joint>
+                <point>HS2</point>
+                <value>angle</value>
+            </row>
+            <row name="Knee Angle at HS1">
+                <joint>knee</joint>
+                <point>HS1</point>
+                <value>angle</value>
+            </row>
+            <row name="Knee Angle at HS2">
+                <joint>knee</joint>
+                <point>HS2</point>
+                <value>angle</value>
+            </row>
+            <row name="Ankle Angle at TO">
+                <joint>ankle</joint>
+                <point>TO</point>
+                <value>angle</value>
+            </row>
+        </data>
     </analysis>
 </Configuration>
