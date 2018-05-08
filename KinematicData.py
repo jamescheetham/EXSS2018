@@ -16,14 +16,7 @@ as angle data (if relevant).
 
 Copyright James Cheetham 2018
 Version: 1.0
-Last Modified: 20180506
-
-"""
-
-"""
-The program needs to import the calibration data and determine the neutral values. The angle
-data may require calculation, as it needs to be determined from the values of the joints on
-either side.
+Last Modified: 20180509
 
 """
 
@@ -36,6 +29,11 @@ class KinematicData:
     It has a Dict of Phases, as well as the information to graph, and to extract from the samples.
     """
     def __init__(self, xml_config_file):
+        """
+        Constructor for the Kinematic Data Class, takes an XML File as an argument which is then parsed
+        for the relevant data. After this has been called, it should have read in and normalised all Samples
+        :param xml_config_file:
+        """
         self.xml_config_file = xml_config_file
         self.xml = None
         self.xml_root = None
@@ -569,6 +567,13 @@ class Joint:
         self.joint_data[frame_num].add_joint_data(column_data, data, y_fudge, low_point)
 
     def normalise_angles(self, calibration_zeros, xml_data):
+        """
+        Updates the angle data to set them as a value of flexion or extension from the calibration angles.
+        It uses the multipler value from the XML file to determine if the direction for flexion needs to be adjusted
+        :param calibration_zeros: A JointData Dict that contains the zero values from calibration data
+        :param xml_data: The XML data that contains the Joint Correction value multipliers
+        :return: None
+        """
         multipliers = {}
         for x in xml_data:
             joint_name = x.get('joint')
@@ -680,6 +685,14 @@ class Joint:
                 y_data.append(self.joint_data[i].get(y_data_type[0], 'z'))
 
     def generate_xy_graph_data(self, x_data, y_data, frame_num, x_adjustment):
+        """
+        Generates XY Plot data
+        :param x_data: The array to contain the X Points to plot
+        :param y_data: The array to contain the Y Points to plot
+        :param frame_num: The frame number of the data to plot
+        :param x_adjustment: The value to adjust the X value by so that the plot is stacked
+        :return:
+        """
         x_data.append(self.joint_data[frame_num].get('position', 'x') - x_adjustment)
         y_data.append(self.joint_data[frame_num].get('position', 'y'))
 
@@ -736,6 +749,12 @@ class JointData:
             self.angle = float(data)
 
     def normalise_angles(self, calibration_zero, multiplier=1):
+        """
+        Normalises the angles for the Joint Data
+        :param calibration_zero: The value that is considered "zero", i.e. where the joint is at 0 degrees flexion
+        :param multiplier: The correction multiplier, if it is -1, then it indicates that the joint flexes backwards
+        :return:
+        """
         if self.angle is not None:
             self.angle = (self.angle - calibration_zero) * multiplier
 
@@ -862,6 +881,7 @@ class Graph:
         self.joint_order = None
         self.normalise = (xml_data.get('normalise') == 'true')
         self.normalise_joint = xml_data.get('normalise_joint')
+        # The graph type can be either line or XY Plot
         if self.graph_type == 'line':
             if xml_data.get("phase") is None:
                 sys.exit("No Phase specified in Graph Definition for %s" % self.title)
@@ -871,12 +891,16 @@ class Graph:
                     self.phase = phases[phase_key]
                 else:
                     sys.exit("Unknown Phase specified in Graph titled %s" % self.title)
+
         elif self.graph_type == 'xy_plot':
             self.joint_order = []
             for j in xml_data.findall('joint'):
                 self.joint_order.append(j.text)
+
+        # Error checking to ensure that there is correct data for a graph
         if self.graph_type == 'xy_plot' and self.point is None:
             sys.exit("No Point specified in Graph Definition for %s" % self.title)
+
         if self.graph_type == 'xy_plot' and self.normalise_joint is None:
             sys.exit("No Normalise Joint specified in Graph Definition for %s" % self.title)
 
