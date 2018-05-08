@@ -136,7 +136,6 @@ class KinematicData:
             plot.set_ylabel(g.y_axis_title)
             x_axis_min = None
             x_axis_max = None
-
             # Loops through the Samples to have the information added to the Graph
             for k, v in self.samples.items():
                 legend_titles.append(v.name)
@@ -208,6 +207,7 @@ class Sample:
         self.columns = {}
         self.calibration_data = []
         self.calibration_zeros = {}
+        self.angular_columns = None
         self.frame_count = 0
         self.process(data_set_info)
 
@@ -222,7 +222,9 @@ class Sample:
         print("Generated Column Data")
         self.get_calibration_data(data_set_info.findall('calibration'))
         print("Pulled Calibration Data")
-        low_point = self.calc_calibration_zeros(data_set_info.find('normalisation'))
+        xml_normalisation = data_set_info.find('normalisation')
+        low_point = self.calc_calibration_zeros(xml_normalisation)
+        self.angular_columns = xml_normalisation.findall('angle_correction')
         datafiles = data_set_info.find('datafile')
 
         # Loops through the details entries in the XML File to extract the data for the Sample
@@ -350,6 +352,9 @@ class Sample:
 
             self.frame_count = self.read_file(csv_reader, file_info, self.joints, low_point)
 
+        for j in self.joints.values():
+            j.normalise_angles(self.calibration_zeros, self.angular_columns)
+
     def generate_column_data(self, xml_columns):
         """
         Read the Column Information from the XML File and populate the class variable columns
@@ -385,17 +390,30 @@ class Sample:
         :param fig: The PyPlot Figure
         :return: The Max and Minimum values for the X-Axis
         """
-        if graph_data.joint in self.joints:
+        x_data = []
+        y_data = []
+        if graph_data.joint in self.joints and graph_data.graph_type == 'line':
             phase_start = graph_data.phase.start
             phase_end = graph_data.phase.end
             # Check that the phase start and phase end are valid for this data
             if phase_start not in self.key_points or phase_end not in self.key_points:
                 sys.exit("Key Point %s or %s not defined for Sample ID %d"
                          % (phase_start, phase_end, self.sample_id))
-            x_data = []
-            y_data = []
+
             self.joints[graph_data.joint].generate_graph_data(x_data, y_data, self.key_points[phase_start],
                                                               self.key_points[phase_end], graph_data)
+        elif graph_data.graph_type == 'xy_plot':
+            x_adjustment = self.joints[graph_data.normalise_joint].joint_data[
+                self.key_points[graph_data.point].frame_num].get('position', 'x')
+            for j in graph_data.joint_order:
+                if graph_data.point not in self.key_points:
+                    sys.exit("Key Point %s not specified for Sample ID %d" % (graph_data.point, self.sample_id))
+                if j not in self.joints:
+                    sys.exit("Joint %s specified for Graph %s does not exist in Sample %d" %
+                             (j, graph_data.title, self.sample_id))
+                self.joints[j].generate_xy_graph_data(x_data, y_data,
+                                                      self.key_points[graph_data.point].frame_num, x_adjustment)
+        if len(x_data) > 0 and len(y_data) > 0:
             fig.plot(x_data, y_data)
             return min(x_data), max(x_data)
         return 0, 0
@@ -447,7 +465,7 @@ class Sample:
 
             csv_writer.writerow(output_list)
             for i in range(1, self.frame_count + 1):
-                output_list = [i + 1]
+                output_list = [i]
                 for v in header:
                     tmp = v.split(' ')
                     if len(tmp) == 2:
@@ -550,6 +568,21 @@ class Joint:
             self.joint_data.update({frame_num: JointData(frame_num, framerate)})
         self.joint_data[frame_num].add_joint_data(column_data, data, y_fudge, low_point)
 
+    def normalise_angles(self, calibration_zeros, xml_data):
+        multipliers = {}
+        for x in xml_data:
+            joint_name = x.get('joint')
+            try:
+                m = int(x.get('multiplier'))
+            except ValueError:
+                sys.exit('The Multiplier Value for Joint Angle Normalisation for %s is not a valid value' % joint_name)
+            multipliers.update({joint_name: m})
+        for j in self.joint_data.values():
+            if self.joint_name in multipliers:
+                j.normalise_angles(calibration_zeros[self.joint_name].get('angle', 'z'), multipliers[self.joint_name])
+            else:
+                j.normalise_angles(calibration_zeros[self.joint_name].get('angle', 'z'))
+
     def __str__(self):
         """
         Overrides the String Object to present a nice output of the Joint
@@ -646,6 +679,10 @@ class Joint:
             else:
                 y_data.append(self.joint_data[i].get(y_data_type[0], 'z'))
 
+    def generate_xy_graph_data(self, x_data, y_data, frame_num, x_adjustment):
+        x_data.append(self.joint_data[frame_num].get('position', 'x') - x_adjustment)
+        y_data.append(self.joint_data[frame_num].get('position', 'y'))
+
     @staticmethod
     def normalise_data(x_data, phase_start, phase_end):
         """
@@ -697,6 +734,10 @@ class JointData:
                 self.data[column_data.type][column_data.plane] = float(data)
         else:
             self.angle = float(data)
+
+    def normalise_angles(self, calibration_zero, multiplier=1):
+        if self.angle is not None:
+            self.angle = (self.angle - calibration_zero) * multiplier
 
     def get(self, data_type, plane):
         """
@@ -812,18 +853,32 @@ class Graph:
         :param xml_data: XML Data
         :param phases: Phase Object list
         """
+        self.graph_type = xml_data.get('type')
         self.filename = xml_data.get("file")
         self.title = xml_data.get("title")
         self.joint = xml_data.get("joint")
+        self.point = xml_data.get("point")
+        self.phase = None
+        self.joint_order = None
         self.normalise = (xml_data.get('normalise') == 'true')
-        if xml_data.get("phase") is None:
-            sys.exit("No Phase specified in Graph Definition for %s" % self.title)
-
-        phase_key = xml_data.get("phase").replace(" ", "_")
-        if phase_key in phases:
-            self.phase = phases[phase_key]
-        else:
-            sys.exit("Unknown Phase specified in Graph titled %s" % self.title)
+        self.normalise_joint = xml_data.get('normalise_joint')
+        if self.graph_type == 'line':
+            if xml_data.get("phase") is None:
+                sys.exit("No Phase specified in Graph Definition for %s" % self.title)
+            else:
+                phase_key = xml_data.get("phase").replace(" ", "_")
+                if phase_key in phases:
+                    self.phase = phases[phase_key]
+                else:
+                    sys.exit("Unknown Phase specified in Graph titled %s" % self.title)
+        elif self.graph_type == 'xy_plot':
+            self.joint_order = []
+            for j in xml_data.findall('joint'):
+                self.joint_order.append(j.text)
+        if self.graph_type == 'xy_plot' and self.point is None:
+            sys.exit("No Point specified in Graph Definition for %s" % self.title)
+        if self.graph_type == 'xy_plot' and self.normalise_joint is None:
+            sys.exit("No Normalise Joint specified in Graph Definition for %s" % self.title)
 
         x_axis = xml_data.find('x-axis')
         y_axis = xml_data.find('y-axis')

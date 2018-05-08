@@ -159,7 +159,7 @@ def main():
         j.add_xy_data(x_data, y_data, i)
       xy_plot_fig.plot(x_data, y_data, marker='o', markersize=8)
     
-    xy_plot.savefig('XY Plot.png')
+    xy_plot.savefig('%s_XY Plot.png' % opt.output_prefix)
 
 
 if __name__ == '__main__':

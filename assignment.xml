@@ -40,6 +40,7 @@
         </calibration>
         <normalisation>
             <low_point joint="toe"/>
+            <angle_correction joint="knee" multiplier="-1"/>
         </normalisation>
         <datafile>
             <details filename='Shod-Linear.txt' framerate='25' skip="6" y-fudge="0.001357142" type="linear"/>
@@ -89,15 +90,35 @@
         </calibration>
         <normalisation>
             <low_point joint="toe"/>
+            <angle_correction joint="knee" multiplier="-1"/>
         </normalisation>
         <datafile>
+            <!--
             <details filename="UnShod-Linear2.txt" framerate="25" skip="6" y-fudge="0.001170731" type="linear"/>
             <details filename="UnShod-Ang2.txt" framerate="25" skip="6" type="angular"/>
+            -->
+            <!-- Smoothed Unshod -->
+            <!--
+            <details filename="Unshod walk Linear.txt" framerate="25" skip="6" y-fudge="0.000857142" type="linear"/>
+            <details filename="Unshod walk Angular.txt" framerate="25" skip="6" type="angular"/>
+            -->
+            <!-- Unsmoothed Unshod -->
+
+            <details filename="Unshod walk_Linear2.txt" framerate="25" skip="6" y-fudge="0.000857142" type="linear"/>
+            <details filename="Unshod walk_Angular2.txt" framerate="25" skip="6" type="angular"/>
+
         </datafile>
         <keypoints>
+            <!--
             <point name="HS1" framenum="8"/>
             <point name="FF" framenum="9"/>
             <point name="HO" framenum="17"/>
+            <point name="TO" framenum="24"/>
+            <point name="HS2" framenum="35"/>
+            -->
+            <point name="HS1" framenum="8"/>
+            <point name="FF" framenum="11"/>
+            <point name="HO" framenum="18"/>
             <point name="TO" framenum="24"/>
             <point name="HS2" framenum="35"/>
         </keypoints>
@@ -117,29 +138,64 @@
     </definitions>
     <analysis>
         <graphs>
-            <graph file="ankle_position.png" title="Ankle Position During Stride" phase="Stride" joint="ankle" normalise="true">
+            <graph type="line" file="ankle_position.png" title="Ankle Position During Stride" phase="Stride" joint="ankle" normalise="true">
                 <x-axis data="x position" title="Distance (% Stride)"/>
                 <y-axis data="y position" title="Height (m)"/>
             </graph>
-            <graph file="toe_position_stride.png" title="Toe Position during Stride" phase="Stride" joint="toe" normalise="false">
+            <graph type="line" file="toe_position_stride.png" title="Toe Position during Stride" phase="Stride" joint="toe" normalise="false">
                 <x-axis data="x position" title="Distance (m)"/>
                 <y-axis data="y position" title="Height (m)"/>
             </graph>
-            <graph file="knee_position.png" title="Knee Position during Stride" phase="Stride" joint="knee" normalise="true">
+            <graph type="line" file="knee_position.png" title="Knee Position during Stride" phase="Stride" joint="knee" normalise="true">
                 <x-axis data="x position" title="Distance (% Stride)"/>
                 <y-axis data="y position" title="Height (m)"/>
             </graph>
-            <graph file="toe_position.png" title="Toe Position during Stride" phase="Stride" joint="toe" normalise="true">
+            <graph type="line" file="toe_position.png" title="Toe Position during Stride" phase="Stride" joint="toe" normalise="true">
                 <x-axis data="x position" title="Distance (% Stride)"/>
                 <y-axis data="y position" title="Height (m)"/>
             </graph>
-            <graph file="ankle_angle.png" phase="Stride" title="Ankle Angle during Stride" joint="ankle" normalise="true">
+            <graph type="line" file="ankle_angle.png" phase="Stride" title="Ankle Angle during Stride" joint="ankle" normalise="true">
                 <x-axis data="x position" title="Distance (% Stride)"/>
                 <y-axis data="angle" title="Angle (degrees)"/>
             </graph>
-            <graph file="shoulder_position.png" phase="Stride" title="Shoulder Position during Stride" joint="glenohumeral" normalise="true">
+            <graph type="line" file="knee_angle.png" phase="Stride" title="Knee Angle during Stride" joint="knee" normalise="true">
+                <x-axis data="x position" title="Distance (% Stride)"/>
+                <y-axis data="angle" title="Angle (degrees)"/>
+            </graph>
+            <graph type="line" file="hip_angle.png" phase="Stride" title="Hip Angle during Stride" joint="hip" normalise="true">
+                <x-axis data="x position" title="Distance (% Stride)"/>
+                <y-axis data="angle" title="Angle (degrees)"/>
+            </graph>
+            <graph type="line" file="shoulder_position.png" phase="Stride" title="Shoulder Position during Stride" joint="glenohumeral" normalise="true">
                 <x-axis data="x position" title="Distance (% Stride)"/>
                 <y-axis data="y position" title="Height (m)"/>
+            </graph>
+            <graph type="xy_plot" file="XY_Plot_HS1.png" point="HS1" title="Body Position at HS1" normalise_joint="glenohumeral">
+                <x-axis data="x position" title="Distance (m)"/>
+                <y-axis data="y position" title="Distance (m)"/>
+                <joint>glenohumeral</joint>
+                <joint>hip</joint>
+                <joint>knee</joint>
+                <joint>ankle</joint>
+                <joint>toe</joint>
+            </graph>
+            <graph type="xy_plot" file="XY_Plot_HS2.png" point="HS2" title="Body Position at HS2" normalise_joint="glenohumeral">
+                <x-axis data="x position" title="Distance (m)"/>
+                <y-axis data="y position" title="Distance (m)"/>
+                <joint>glenohumeral</joint>
+                <joint>hip</joint>
+                <joint>knee</joint>
+                <joint>ankle</joint>
+                <joint>toe</joint>
+            </graph>
+            <graph type="xy_plot" file="XY_Plot_TO.png" point="TO" title="Body Position at TO" normalise_joint="toe">
+                <x-axis data="x position" title="Distance (m)"/>
+                <y-axis data="y position" title="Distance (m)"/>
+                <joint>glenohumeral</joint>
+                <joint>hip</joint>
+                <joint>knee</joint>
+                <joint>ankle</joint>
+                <joint>toe</joint>
             </graph>
         </graphs>
         <data file="output_data.csv">
@@ -185,6 +241,11 @@
             </row>
             <row name="Ankle Angle at TO">
                 <joint>ankle</joint>
+                <point>TO</point>
+                <value>angle</value>
+            </row>
+            <row name="Knee Angle at TO">
+                <joint>knee</joint>
                 <point>TO</point>
                 <value>angle</value>
             </row>
