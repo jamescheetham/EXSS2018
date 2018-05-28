@@ -181,7 +181,10 @@ class Sample:
             y_data = []
             self.joints[graph_data.joint].generate_graph_data(x_data, y_data, self.key_points[phase_start],
                                                               self.key_points[phase_end], graph_data)
-            fig.plot(x_data, y_data)
+            if graph_data.graph_type == 'xy_plot':
+                fig.plot(x_data, y_data, marker='o', markersize=8)
+            else:
+                fig.plot(x_data, y_data)
 
 
 class ColumnData:

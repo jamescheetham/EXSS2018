@@ -43,8 +43,8 @@
             <angle_correction joint="knee" multiplier="-1"/>
         </normalisation>
         <datafile>
-            <details filename='Shod-Linear.txt' framerate='25' skip="6" y-fudge="0.001357142" type="linear"/>
-            <details filename='Shod-Ang.txt' framerate="25" skip="6" type="angular"/>
+            <details filename='Shod_Raw_Linear.txt' framerate='25' skip="6" y-fudge="-0.0020238095" type="linear"/>
+            <details filename='Shod_Smoothed_Ang.txt' framerate="25" skip="6" type="angular"/>
         </datafile>
         <keypoints>
             <point name='HS1' framenum='3'/>
@@ -104,8 +104,8 @@
             -->
             <!-- Unsmoothed Unshod -->
 
-            <details filename="Unshod walk_Linear2.txt" framerate="25" skip="6" y-fudge="0.000857142" type="linear"/>
-            <details filename="Unshod walk_Angular2.txt" framerate="25" skip="6" type="angular"/>
+            <details filename="Unshod_Raw_Linear.txt" framerate="25" skip="6" y-fudge="0.0008780488" type="linear"/>
+            <details filename="Unshod_Smoothed_Angular.txt" framerate="25" skip="6" type="angular"/>
 
         </datafile>
         <keypoints>
@@ -139,7 +139,7 @@
     <analysis>
         <graphs>
             <graph type="line" file="ankle_position.png" title="Ankle Position During Stride" phase="Stride" joint="ankle" normalise="true">
-                <x-axis data="x position" title="Distance (% Stride)"/>
+                <x-axis data="x position" title="Key Events in Gait Cycle"/>
                 <y-axis data="y position" title="Height (m)"/>
             </graph>
             <graph type="line" file="toe_position_stride.png" title="Toe Position during Stride" phase="Stride" joint="toe" normalise="false">
@@ -147,28 +147,44 @@
                 <y-axis data="y position" title="Height (m)"/>
             </graph>
             <graph type="line" file="knee_position.png" title="Knee Position during Stride" phase="Stride" joint="knee" normalise="true">
-                <x-axis data="x position" title="Distance (% Stride)"/>
+                <x-axis data="x position" title="Key Events in Gait Cycle"/>
                 <y-axis data="y position" title="Height (m)"/>
             </graph>
             <graph type="line" file="toe_position.png" title="Toe Position during Stride" phase="Stride" joint="toe" normalise="true">
-                <x-axis data="x position" title="Distance (% Stride)"/>
+                <x-axis data="x position" title="Key Events in Gait Cycle"/>
                 <y-axis data="y position" title="Height (m)"/>
             </graph>
             <graph type="line" file="ankle_angle.png" phase="Stride" title="Ankle Angle during Stride" joint="ankle" normalise="true">
-                <x-axis data="x position" title="Distance (% Stride)"/>
+                <x-axis data="x position" title="Key Events in Gait Cycle"/>
                 <y-axis data="angle" title="Angle (degrees)"/>
             </graph>
             <graph type="line" file="knee_angle.png" phase="Stride" title="Knee Angle during Stride" joint="knee" normalise="true">
-                <x-axis data="x position" title="Distance (% Stride)"/>
+                <x-axis data="x position" title="Key Events in Gait Cycle"/>
                 <y-axis data="angle" title="Angle (degrees)"/>
             </graph>
             <graph type="line" file="hip_angle.png" phase="Stride" title="Hip Angle during Stride" joint="hip" normalise="true">
-                <x-axis data="x position" title="Distance (% Stride)"/>
+                <x-axis data="x position" title="Key Events in Gait Cycle"/>
                 <y-axis data="angle" title="Angle (degrees)"/>
             </graph>
             <graph type="line" file="shoulder_position.png" phase="Stride" title="Shoulder Position during Stride" joint="glenohumeral" normalise="true">
-                <x-axis data="x position" title="Distance (% Stride)"/>
+                <x-axis data="x position" title="Key Events in Gait Cycle"/>
                 <y-axis data="y position" title="Height (m)"/>
+            </graph>
+            <graph type="line" file="hip_position.png" phase="Stride" title="Hip Position during Stride" joint="hip" normalise="true">
+                <x-axis data="x position" title="Key Events in Gait Cycle"/>
+                <y-axis data="y position" title="Height (m)"/>
+            </graph>
+            <graph type="line" file="hip_horizontal_velocity.png" phase="Stride" title="Hip Horizontal Velocity during Stride" joint="hip" normalise="true">
+                <x-axis data="x position" title="Key Events in Gait Cycle"/>
+                <y-axis data="x velocity" title="Horizontal Velocity (m/s)"/>
+            </graph>
+            <graph type="line" file="hip_vertical_velocity.png" phase="Stride" title="Hip Vertical Velocity during Stride" joint="hip" normalise="true">
+                <x-axis data="x position" title="Key Events in Gait Cycle"/>
+                <y-axis data="y velocity" title="Vertical Velocity (m/s)"/>
+            </graph>
+            <graph type="line" file="hip_displacement.png" phase="Stride" title="Vertical Displacement of Hip During Stride" joint="hip" normalise="true">
+                <x-axis data="x position" title="Distance (m)"/>
+                <y-axis data="x position" title="Distance (m)"/>
             </graph>
             <graph type="xy_plot" file="XY_Plot_HS1.png" point="HS1" title="Body Position at HS1" normalise_joint="glenohumeral">
                 <x-axis data="x position" title="Distance (m)"/>

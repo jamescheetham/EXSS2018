@@ -134,17 +134,34 @@ class KinematicData:
             plot.set_ylabel(g.y_axis_title)
             x_axis_min = None
             x_axis_max = None
+            x_axis_labels = {}
             # Loops through the Samples to have the information added to the Graph
+            i=0
             for k, v in self.samples.items():
                 legend_titles.append(v.name)
-                tmp_min, tmp_max = v.graph(g, plot)
+                tmp_min, tmp_max = v.graph(g, plot, Graph.GRAPH_MARKERS[i], Graph.GRAPH_LINES[i], x_axis_labels)
                 if x_axis_min is None or tmp_min < x_axis_min:
                     x_axis_min = tmp_min
                 if x_axis_max is None or tmp_max > x_axis_max:
                     x_axis_max = tmp_max
+                i += 1
+                # Need to think about the X Axis to mark the key points. The sample has information on the keypoints, so I would 
+                # have to loop through them and record the frame numbers, which would then have to be normalised like the data.
+                # This would then have to be averaged between the samples.
             plot.legend(legend_titles)
             # noinspection PyTypeChecker
             plot.set_xlim([x_axis_min, x_axis_max])
+            if len(x_axis_labels) > 0:
+                x_ticks = []
+                x_labels = []
+                for k, v in x_axis_labels.items():
+                    x_labels.append(k)
+                    tick_sum = 0
+                    for i in v:
+                        tick_sum += i
+                    x_ticks.append(tick_sum/len(v))
+                plot.set_xticks(x_ticks)
+                plot.set_xticklabels(x_labels)
             fig.savefig(g.filename)
 
     def process_extract_data(self):
@@ -381,11 +398,13 @@ class Sample:
             if None in self.columns[column_type.tag]:
                 sys.exit('There was an error processing Column Data for the file %s' % self.name)
 
-    def graph(self, graph_data, fig):
+    def graph(self, graph_data, fig, marker, line_type, x_axis_labels):
         """
-        Graph the Sample onto a figure
+        Graph the Sample onto a figure. It will always plot as a Black, using the Marker and Line Type provided
         :param graph_data: The GraphData Object
         :param fig: The PyPlot Figure
+        :marker: The Marker Type to use from MatPlotLib
+        :line_type: The Line Type to use from MatPlotLib
         :return: The Max and Minimum values for the X-Axis
         """
         x_data = []
@@ -400,6 +419,9 @@ class Sample:
 
             self.joints[graph_data.joint].generate_graph_data(x_data, y_data, self.key_points[phase_start],
                                                               self.key_points[phase_end], graph_data)
+            if graph_data.normalise:
+                self.generate_x_axis_label_data(self.key_points[phase_start].frame_num,
+                                                self.key_points[phase_end].frame_num, x_axis_labels)
         elif graph_data.graph_type == 'xy_plot':
             x_adjustment = self.joints[graph_data.normalise_joint].joint_data[
                 self.key_points[graph_data.point].frame_num].get('position', 'x')
@@ -412,9 +434,19 @@ class Sample:
                 self.joints[j].generate_xy_graph_data(x_data, y_data,
                                                       self.key_points[graph_data.point].frame_num, x_adjustment)
         if len(x_data) > 0 and len(y_data) > 0:
-            fig.plot(x_data, y_data)
+            if graph_data.graph_type == 'xy_plot':
+                fig.plot(x_data, y_data, marker=marker, markersize='6', linestyle=line_type, color='k')
+            else:
+                fig.plot(x_data, y_data, linestyle=line_type, color='k')
             return min(x_data), max(x_data)
         return 0, 0
+    
+    def generate_x_axis_label_data(self, phase_start, phase_end, x_axis_labels):
+        for kp in self.key_points.values():
+            if phase_start <= kp.frame_num <= phase_end:
+                if kp.name not in x_axis_labels:
+                    x_axis_labels.update({kp.name: []})
+                x_axis_labels[kp.name].append((kp.frame_num - phase_start)/(phase_end - phase_start)*100)
 
     def write_segment_lengths(self, segments):
         """
@@ -865,6 +897,8 @@ class Graph:
     """
     Graph Object that holds the information from the XML Data
     """
+    GRAPH_MARKERS = ['o', 'v', '^', '>', '<']
+    GRAPH_LINES = ['-', '--', '-.', ':']
     def __init__(self, xml_data, phases):
         """
         Extracts the information from the XML File for a Graph. Requires the specified phase to be be previously
