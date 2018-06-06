@@ -159,7 +159,14 @@ class KinematicData:
                     tick_sum = 0
                     for i in v:
                         tick_sum += i
+                        if tick_sum == i:
+                            line_style = '-'
+                        else:
+                            line_style = '--'
+                        plot.axvline(i, color='k', linestyle=line_style, ymin=0, ymax=1)
                     x_ticks.append(tick_sum/len(v))
+#                    if 0 < x_ticks[-1] < 100:
+#                        plot.axvline(x_ticks[-1], color='k', linestyle=':', ymin=0, ymax=1)
                 plot.set_xticks(x_ticks)
                 plot.set_xticklabels(x_labels)
             fig.savefig(g.filename)
